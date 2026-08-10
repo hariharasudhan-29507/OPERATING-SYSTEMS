@@ -1,0 +1,33 @@
+[24bcs040@mepcolinux ex1]$./q1
+Process Created :- P1
+Process id :16613
+Process Created :- P3
+Process Created :- P5
+ Process id :16615	 Parent id:16613
+ Process id :16616	 Parent id:16615
+Process Created :- P4
+ Process id :16617	 Parent id:16614
+Process Created :- P2
+ Process id :16614	Parent id:16613
+[24bcs040@mepcolinux ex1]$./q1
+Process Created :- P1
+Process id :16671
+Process Created :- P2
+Process Created :- P4
+ Process id :16672	Parent id:16671
+ Process id :16674	 Parent id:16672
+Process Created :- P3
+ Process id :16673	 Parent id:16671
+Process Created :- P5
+ Process id :16675	 Parent id:16673
+[24bcs040@mepcolinux ex1]$./q1
+Process Created :- P1
+Process id :16771
+Process Created :- P2
+Process Created :- P4
+ Process id :16772	Parent id:16771
+ Process id :16774	 Parent id:16772
+Process Created :- P3
+Process Created :- P5
+ Process id :16773	 Parent id:16771
+ Process id :16775	 Parent id:16773
