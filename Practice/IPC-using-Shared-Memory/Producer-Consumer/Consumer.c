@@ -6,58 +6,50 @@
 #include <unistd.h>
 
 #define SIZE 10
+#define SHM_KEY 4777
 
-int main()
-{
-    int shmid, *buf;
+int main() {
+    int shmid;
+    volatile int *buf;
     int num;
 
-    shmid = shmget(4777, sizeof(int) * (SIZE + 2), 0666);
-    if (shmid == -1)
-    {
-        perror("shmget");
+    // Connect to the shared memory mapping allocation
+    shmid = shmget(SHM_KEY, sizeof(int) * (SIZE + 2), 0666);
+    if (shmid == -1) {
+        perror("shmget failed. Please launch the Producer first");
         exit(1);
     }
 
-    buf = (int *)shmat(shmid, NULL, 0);
-    if (buf == (void *)-1)
-    {
-        perror("shmat");
+    buf = (volatile int *)shmat(shmid, NULL, 0);
+    if (buf == (void *)-1) {
+        perror("shmat failed");
         exit(1);
     }
 
-    printf("Consumer: Reading data :\n");
+    printf("Consumer Active. Waiting for real-time production stream...\n");
 
-    int producer_done = 0;
-
-    while (1)
-    {
-        
-        while (buf[SIZE] == buf[SIZE+1] && !producer_done)
-        {
-            usleep(1000);
+    while (1) {
+        // BLOCK: Hard wait loop if the write pointer catches up with read pointer
+        while (buf[SIZE] == buf[SIZE+1]) {
+            usleep(50000); // 50ms check cycle
         }
 
-        if (buf[SIZE] == buf[SIZE+1] && producer_done)
-            break;
-
-        
+        // Pick out the current pending index value
         num = buf[buf[SIZE+1] % SIZE];
-
         
-        if (num == -1)
-        {
-            producer_done = 1;
-            buf[SIZE+1]++; 
-            continue;
+        // Push the tracking pointer forward immediately
+        buf[SIZE+1]++; 
+
+        // Check for sentinel exit protocol
+        if (num == -1) {
+            printf("[Termination Signal Received -1. Closing Pipeline]\n");
+            break;
         }
 
-        printf("%d\n", num);
-        buf[SIZE+1]++; 
+        printf("Consumed: %d\n", num);
     }
 
-    shmdt(buf);
-    shmctl(shmid, IPC_RMID, NULL); 
-
+    shmdt((void *)buf);
+    shmctl(shmid, IPC_RMID, NULL); // Safe system clean up
     return 0;
 }
