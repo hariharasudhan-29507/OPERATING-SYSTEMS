@@ -6,61 +6,54 @@
 #include <unistd.h>
 
 #define SIZE 10
+#define SHM_KEY 4777
 
-int main()
-{
-    int shmid, *buf;
+int main() {
+    int shmid;
+    // Use volatile to prevent the compiler from optimizing out memory reads/writes
+    volatile int *buf;
     int num;
 
-    shmid = shmget(4777, sizeof(int) * (SIZE + 2), IPC_CREAT | 0666);
-    if (shmid == -1)
-    {
-        perror("shmget");
+    // Create the shared memory segment
+    shmid = shmget(SHM_KEY, sizeof(int) * (SIZE + 2), IPC_CREAT | 0666);
+    if (shmid == -1) {
+        perror("shmget failed");
         exit(1);
     }
 
-    buf = (int *)shmat(shmid, NULL, 0);
-    if (buf == (void *)-1)
-    {
-        perror("shmat");
+    buf = (volatile int *)shmat(shmid, NULL, 0);
+    if (buf == (void *)-1) {
+        perror("shmat failed");
         exit(1);
     }
 
-    // Initialize indices
+    // Initialize the shared state indices ONLY once here
     buf[SIZE]   = 0; // in
     buf[SIZE+1] = 0; // out
 
-    printf("Producer: Enter data:):\n");
+    printf("Producer Active. Enter integers (-1 to stop):\n");
 
-    while (1)
-    {
+    while (1) {
         printf("Enter data: ");
-        scanf("%d", &num);
+        if (scanf("%d", &num) != 1) break;
 
-        // Stop production if -1 is entered
-        if (num == -1)
-        {
-            // Write -1 as sentinel
-            while (buf[SIZE] - buf[SIZE+1] >= SIZE)
-            {
-                usleep(1000); // wait if buffer full
-            }
-            buf[buf[SIZE] % SIZE] = -1;
-            buf[SIZE]++; // increment in
+        // BLOCK: Wait if the circular queue is fully saturated
+        while ((buf[SIZE] - buf[SIZE+1]) >= SIZE) {
+            usleep(100000); // 100ms pause to save CPU cycles
+        }
+
+        // Write element into safe circular index
+        buf[buf[SIZE] % SIZE] = num;
+        
+        // Use a memory fence equivalent by incrementing right after data commitment
+        buf[SIZE]++; 
+
+        if (num == -1) {
             break;
         }
-
-        // Wait if buffer is full
-        while (buf[SIZE] - buf[SIZE+1] >= SIZE)
-        {
-            usleep(1000);
-        }
-
-        // Write to circular buffer
-        buf[buf[SIZE] % SIZE] = num;
-        buf[SIZE]++; // increment in after write
     }
 
-    shmdt(buf);
+    shmdt((void *)buf);
+    printf("Producer Finished.\n");
     return 0;
 }
