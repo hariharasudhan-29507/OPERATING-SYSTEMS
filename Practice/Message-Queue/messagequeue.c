@@ -1,4 +1,3 @@
-[24bcs040@mepcolinux ex3b]$cat q1.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -39,8 +38,10 @@ int main() {
     } 
     else if (pid == 0) {
         
+        printf("Consumer Created\n");
+
         struct msg_buffer message;
-        
+       
         for (i = 1; i <= 5; i++) {
             
             if (msgrcv(msqid, &message, sizeof(message.data), 1, 0) == -1) {
@@ -50,13 +51,16 @@ int main() {
             printf("[Consumer] Consumed item: %d\n", message.data);
             sleep(2);
         }
+	printf("Consumer ended\n");
         exit(0);
     } 
     else {
         
+	printf("Producer Created\n");
 	struct msg_buffer message;
         message.msg_type = 1;
 
+	
         for (i = 1; i <= 5; i++) {
             message.data = i * 10; 
             printf("[Producer] Produced item: %d\n", message.data);
@@ -72,7 +76,7 @@ int main() {
         
         wait(NULL);
 
-        
+        printf("Producer ended\n");
         msgctl(msqid, IPC_RMID, NULL);
         printf("Message queue destroyed. Program finished.\n");
     }
