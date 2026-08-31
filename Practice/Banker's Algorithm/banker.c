@@ -108,8 +108,8 @@ int main() {
     int available[m];
     int choice;
     printf("\nChoose method to obtain Available matrix:\n");
-    printf("1. Enter Available matrix\n");
-    printf("2. Calculate from Total instances \n");
+    printf("1. Enter Available matrix manually\n");
+    printf("2. Calculate from Total instances (Available = Total - Sum of Allocated)\n");
     printf("Enter your choice (1 or 2): ");
     scanf("%d", &choice);
 
