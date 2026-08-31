@@ -7,6 +7,15 @@ void calculateNeed(int n, int m, int need[n][m], int max[n][m], int allocation[n
             need[i][j] = max[i][j] - allocation[i][j];
 }
 
+void calculateAvailable(int n, int m, int available[m], int total[m], int allocation[n][m]) {
+    for (int j = 0; j < m; j++) {
+        int sum = 0;
+        for (int i = 0; i < n; i++)
+            sum += allocation[i][j];
+        available[j] = total[j] - sum;
+    }
+}
+
 bool isSafe(int n, int m, int allocation[n][m], int need[n][m], int available[m], int safeSeq[n]) {
     int work[m];
     bool finish[n];
@@ -77,6 +86,11 @@ int main() {
     printf("Enter number of resources: ");
     scanf("%d", &m);
 
+    int total[m];
+    printf("Enter total instances of each resource in the system:\n");
+    for (int i = 0; i < m; i++)
+        scanf("%d", &total[i]);
+
     int allocation[n][m];
     int max[n][m];
     int need[n][m];
@@ -92,9 +106,23 @@ int main() {
             scanf("%d", &max[i][j]);
 
     int available[m];
-    printf("Enter Available Resources:\n");
-    for (int i = 0; i < m; i++)
-        scanf("%d", &available[i]);
+    int choice;
+    printf("\nChoose method to obtain Available matrix:\n");
+    printf("1. Enter Available matrix\n");
+    printf("2. Calculate from Total instances \n");
+    printf("Enter your choice (1 or 2): ");
+    scanf("%d", &choice);
+
+    if (choice == 1) {
+        printf("Enter Available Resources:\n");
+        for (int i = 0; i < m; i++)
+            scanf("%d", &available[i]);
+    } else if (choice == 2) {
+        calculateAvailable(n, m, available, total, allocation);
+    } else {
+        printf("Invalid choice. Exiting.\n");
+        return 1;
+    }
 
     calculateNeed(n, m, need, max, allocation);
 
@@ -105,6 +133,11 @@ int main() {
         printf("\n");
     }
 
+    printf("\nAvailable Resources:\n");
+    for (int j = 0; j < m; j++)
+        printf("%d ", available[j]);
+    printf("\n");
+
     int safeSeq[n];
     if (isSafe(n, m, allocation, need, available, safeSeq)) {
         printf("\nSystem is in SAFE STATE.\nSafe Sequence: ");
@@ -114,7 +147,7 @@ int main() {
         printf("\nSystem is in UNSAFE STATE.\n");
     }
 
-    char choice;
+    char reqChoice;
     do {
         int process;
         printf("\nEnter process number for resource request: ");
@@ -128,8 +161,8 @@ int main() {
         requestResources(n, m, process, request, allocation, need, available);
 
         printf("\nDo you want to make another request? (y/n): ");
-        scanf(" %c", &choice);
-    } while (choice == 'y' || choice == 'Y');
+        scanf(" %c", &reqChoice);
+    } while (reqChoice == 'y' || reqChoice == 'Y');
 
     return 0;
 }
