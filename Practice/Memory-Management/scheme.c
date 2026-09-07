@@ -19,43 +19,7 @@ typedef struct {
     int remaining;
 } MemoryBlock;
 
-MemoryBlock memory[MAX_BLOCKS];
-Process processes[MAX_PROCESSES];
-int block_count = 0;
-int process_count = 0;
-
-void initialize_memory(int blocks[], int n) {
-    block_count = n;
-    for (int i = 0; i < n; i++) {
-        memory[i].id = i;
-        memory[i].size = blocks[i];
-        memory[i].is_free = 1;
-        memory[i].remaining = blocks[i];
-    }
-}
-
-void reset_memory(int blocks[], int n) {
-    for (int i = 0; i < n; i++) {
-        memory[i].is_free = 1;
-        memory[i].remaining = memory[i].size;
-    }
-    for (int i = 0; i < process_count; i++) {
-        processes[i].allocated_block = -1;
-        processes[i].is_allocated = 0;
-    }
-}
-
-void add_processes(int sizes[], int n) {
-    process_count = n;
-    for (int i = 0; i < n; i++) {
-        processes[i].id = i;
-        processes[i].size = sizes[i];
-        processes[i].allocated_block = -1;
-        processes[i].is_allocated = 0;
-    }
-}
-
-int first_fit(Process *p) {
+int first_fit(MemoryBlock memory[], int block_count, Process *p) {
     for (int i = 0; i < block_count; i++) {
         if (memory[i].is_free && memory[i].size >= p->size) {
             p->allocated_block = i;
@@ -68,7 +32,7 @@ int first_fit(Process *p) {
     return -1;
 }
 
-int best_fit(Process *p) {
+int best_fit(MemoryBlock memory[], int block_count, Process *p) {
     int best_idx = -1;
     int min_diff = INT_MAX;
     for (int i = 0; i < block_count; i++) {
@@ -89,7 +53,7 @@ int best_fit(Process *p) {
     return best_idx;
 }
 
-int worst_fit(Process *p) {
+int worst_fit(MemoryBlock memory[], int block_count, Process *p) {
     int worst_idx = -1;
     int max_diff = -1;
     for (int i = 0; i < block_count; i++) {
@@ -110,82 +74,90 @@ int worst_fit(Process *p) {
     return worst_idx;
 }
 
-void allocate_all(int (*fit_func)(Process *)) {
-    for (int i = 0; i < process_count; i++) {
-        if (!processes[i].is_allocated) {
-            fit_func(&processes[i]);
-        }
-    }
-}
-
-void deallocate_process(int process_id) {
-    for (int i = 0; i < process_count; i++) {
-        if (processes[i].id == process_id && processes[i].is_allocated) {
-            int block_idx = processes[i].allocated_block;
-            memory[block_idx].is_free = 1;
-            memory[block_idx].remaining = memory[block_idx].size;
-            processes[i].allocated_block = -1;
-            processes[i].is_allocated = 0;
-            return;
-        }
-    }
-}
-
-void print_memory_status() {
-    printf("\nMemory Blocks:\n");
-    printf("%-10s %-10s %-10s %-10s\n", "Block ID", "Size", "Free", "Remaining");
-    for (int i = 0; i < block_count; i++) {
-        printf("%-10d %-10d %-10s %-10d\n", memory[i].id, memory[i].size,
-               memory[i].is_free ? "Yes" : "No", memory[i].remaining);
-    }
-}
-
-void print_process_status() {
-    printf("\nProcesses:\n");
-    printf("%-10s %-10s %-15s %-10s\n", "Process ID", "Size", "Allocated Block", "Status");
-    for (int i = 0; i < process_count; i++) {
-        printf("%-10d %-10d %-15d %-10s\n", processes[i].id, processes[i].size,
-               processes[i].allocated_block,
-               processes[i].is_allocated ? "Allocated" : "Waiting");
-    }
-}
-
-void run_first_fit(int mem_blocks[], int m, int proc_sizes[], int p) {
-    printf("=== FIRST FIT ===\n");
-    initialize_memory(mem_blocks, m);
-    add_processes(proc_sizes, p);
-    allocate_all(first_fit);
-    print_memory_status();
-    print_process_status();
-}
-
-void run_best_fit(int mem_blocks[], int m, int proc_sizes[], int p) {
-    printf("\n=== BEST FIT ===\n");
-    reset_memory(mem_blocks, m);
-    add_processes(proc_sizes, p);
-    allocate_all(best_fit);
-    print_memory_status();
-    print_process_status();
-}
-
-void run_worst_fit(int mem_blocks[], int m, int proc_sizes[], int p) {
-    printf("\n=== WORST FIT ===\n");
-    reset_memory(mem_blocks, m);
-    add_processes(proc_sizes, p);
-    allocate_all(worst_fit);
-    print_memory_status();
-    print_process_status();
-}
-
 int main() {
-    int mem_blocks[] = {100, 500, 200, 300, 600};
-    int proc_sizes[] = {212, 417, 112, 426};
-    int m = sizeof(mem_blocks) / sizeof(mem_blocks[0]);
-    int p = sizeof(proc_sizes) / sizeof(proc_sizes[0]);
+    MemoryBlock memory[MAX_BLOCKS];
+    Process processes[MAX_PROCESSES];
+    MemoryBlock original_memory[MAX_BLOCKS];
+    int block_count, process_count;
+    int choice;
 
-    run_first_fit(mem_blocks, m, proc_sizes, p);
-    run_best_fit(mem_blocks, m, proc_sizes, p);
-    run_worst_fit(mem_blocks, m, proc_sizes, p);
+    printf("Enter number of memory blocks: ");
+    scanf("%d", &block_count);
+    printf("Enter sizes of %d memory blocks:\n", block_count);
+    for (int i = 0; i < block_count; i++) {
+        printf("Block %d size: ", i);
+        scanf("%d", &memory[i].size);
+        memory[i].id = i;
+        memory[i].is_free = 1;
+        memory[i].remaining = memory[i].size;
+        original_memory[i] = memory[i];
+    }
 
+    printf("Enter number of processes: ");
+    scanf("%d", &process_count);
+    printf("Enter sizes of %d processes:\n", process_count);
+    for (int i = 0; i < process_count; i++) {
+        printf("Process %d size: ", i);
+        scanf("%d", &processes[i].size);
+        processes[i].id = i;
+        processes[i].allocated_block = -1;
+        processes[i].is_allocated = 0;
+    }
+
+    do {
+        printf("\n--- Memory Allocation Menu ---\n");
+        printf("1. First Fit\n");
+        printf("2. Best Fit\n");
+        printf("3. Worst Fit\n");
+        printf("4. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        if (choice >= 1 && choice <= 3) {
+            for (int i = 0; i < block_count; i++) {
+                memory[i] = original_memory[i];
+            }
+            for (int i = 0; i < process_count; i++) {
+                processes[i].allocated_block = -1;
+                processes[i].is_allocated = 0;
+            }
+
+            if (choice == 1) {
+                printf("\n=== FIRST FIT ===\n");
+                for (int i = 0; i < process_count; i++) {
+                    first_fit(memory, block_count, &processes[i]);
+                }
+            } else if (choice == 2) {
+                printf("\n=== BEST FIT ===\n");
+                for (int i = 0; i < process_count; i++) {
+                    best_fit(memory, block_count, &processes[i]);
+                }
+            } else if (choice == 3) {
+                printf("\n=== WORST FIT ===\n");
+                for (int i = 0; i < process_count; i++) {
+                    worst_fit(memory, block_count, &processes[i]);
+                }
+            }
+
+            printf("\nMemory Blocks:\n");
+            printf("%-10s %-10s %-10s %-10s\n", "Block ID", "Size", "Free", "Remaining");
+            for (int i = 0; i < block_count; i++) {
+                printf("%-10d %-10d %-10s %-10d\n", memory[i].id, memory[i].size,
+                       memory[i].is_free ? "Yes" : "No", memory[i].remaining);
+            }
+
+            printf("\nProcesses:\n");
+            printf("%-10s %-10s %-15s %-10s\n", "Process ID", "Size", "Allocated Block", "Status");
+            for (int i = 0; i < process_count; i++) {
+                printf("%-10d %-10d %-15d %-10s\n", processes[i].id, processes[i].size,
+                       processes[i].allocated_block,
+                       processes[i].is_allocated ? "Allocated" : "Waiting");
+            }
+        } else if (choice != 4) {
+            printf("Invalid choice. Please try again.\n");
+        }
+    } while (choice != 4);
+
+    printf("Exiting program.\n");
     return 0;
 }
