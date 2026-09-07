@@ -1,3 +1,7 @@
+#include <pthread.h>
+#include <semaphore.h>
+#include <stdlib.h>
+
 typedef struct {
     pthread_mutex_t mutex;
     sem_t hydroQueue;
@@ -6,6 +10,9 @@ typedef struct {
     int hydrogen;
     int oxygen;
 } H2O;
+
+void releaseHydrogen();
+void releaseOxygen();
 
 H2O* h2oCreate() {
     H2O* obj = (H2O*)malloc(sizeof(H2O));
