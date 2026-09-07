@@ -147,11 +147,11 @@ int main() {
             }
 
             printf("\nProcesses:\n");
-            printf("%-10s %-10s %-15s %-10s\n", "Process ID", "Size", "Allocated Block", "Status");
+            printf("%-10s %-10s %-15s %-15s\n", "Process ID", "Size", "Allocated Block", "Status");
             for (int i = 0; i < process_count; i++) {
-                printf("%-10d %-10d %-15d %-10s\n", processes[i].id, processes[i].size,
+                printf("%-10d %-10d %-15d %-15s\n", processes[i].id, processes[i].size,
                        processes[i].allocated_block,
-                       processes[i].is_allocated ? "Allocated" : "Waiting");
+                       processes[i].is_allocated ? "Allocated" : "Not Allocated");
             }
         } else if (choice != 4) {
             printf("Invalid choice. Please try again.\n");
